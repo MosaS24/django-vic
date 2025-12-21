@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Ведущий — {{ session.quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="grid grid-2">
+  <div class="card">
+    <div class="row" style="justify-content:space-between;">
+      <div>
+        <h1 style="margin:0;">Панель ведущего</h1>
+        <p class="muted" style="margin:6px 0 0 0;"><b>{{ session.quiz.title }}</b></p>
+      </div>
+      <div class="row">
+        <span class="pill">Комната: <b>{{ session.code }}</b></span>
+        <span class="pill">Статус: <b id="status">{{ session.status }}</b></span>
+        <span class="pill">Участников: <b id="participants">…</b></span>
+      </div>
+    </div>
+
+    {% if error %}
+      <p style="color:#b91c1c;"><b>{{ error }}</b></p>
+    {% endif %}
+
+    <div class="hr"></div>
+
+    <h2 style="margin-top:0;">Управление</h2>
+
+    <div class="row">
+      <form method="post">
+        {% csrf_token %}
+        <button class="btn" type="submit" name="action" value="start"
+          {% if session.status != "waiting" %}disabled{% endif %}>
+          Start
+        </button>
+      </form>
+
+      <form method="post">
+        {% csrf_token %}
+        <button class="btn secondary" type="submit" name="action" value="next"
+          {% if session.status != "running" %}disabled{% endif %}>
+          Next
+        </button>
+      </form>
+
+      <form method="post">
+        {% csrf_token %}
+        <button class="btn danger" type="submit" name="action" value="finish"
+          {% if session.status == "finished" %}disabled{% endif %}>
+          Finish
+        </button>
+      </form>
+
+      <a class="btn secondary" href="{% url 'host_results' code=session.code %}">📊 Результаты</a>
+    </div>
+
+    <div class="hr"></div>
+
+    <h2 style="margin-top:0;">Текущий вопрос</h2>
+    {% if session.current_question %}
+      <p class="muted">Вопрос {{ current_index }} из {{ questions_total }}</p>
+      <p><b>{{ session.current_question.text }}</b></p>
+    {% else %}
+      <p class="muted">Нет активного вопроса (ожидание старта или завершено).</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">Подключение участников</h2>
+
+    <p class="muted" style="margin-top:0;">Ссылка:</p>
+    <p style="word-break:break-all;">
+      <a href="{{ join_url }}">{{ join_url }}</a>
+    </p>
+
+    <div class="hr"></div>
+
+    <p class="muted" style="margin-top:0;">QR-код:</p>
+    <img
+      src="{% url 'session_qr_png' code=session.code %}"
+      alt="QR"
+      style="width:260px; height:260px; border-radius:16px; border:1px solid #e5e7eb;"
+    />
+
+    <p class="muted" style="margin-top:12px;">
+      Участники заходят по QR → вводят имя → ждут старт.
+    </p>
+  </div>
+</div>
+
+<script>
+  async function tick() {
+    try {
+      const r = await fetch("{% url 'host_stats' code=session.code %}", {cache:"no-store"});
+      if (!r.ok) return;
+      const data = await r.json();
+      document.getElementById("participants").textContent = data.participants;
+      document.getElementById("status").textContent = data.status;
+    } catch (e) {}
+    setTimeout(tick, 1200);
+  }
+  tick();
+</script>
+{% endblock %}

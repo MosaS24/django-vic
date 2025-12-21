@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Удалить вопрос{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>Удалить вопрос?</h1>
+  <p><b>{{ question.text }}</b></p>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="row">
+      <button class="btn danger" type="submit">Да, удалить</button>
+      <a class="btn secondary" href="{% url 'quiz_edit' quiz_id=quiz.id %}">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

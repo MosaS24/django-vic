@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Итоги — {{ session.quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:820px; margin:0 auto;">
+  <div class="row" style="justify-content:space-between;">
+    <div>
+      <h1 style="margin:0;">Итоги: {{ session.quiz.title }}</h1>
+      <p class="muted" style="margin:6px 0 0 0;">Комната: <b>{{ session.code }}</b></p>
+    </div>
+    <div class="pill">Ваши баллы: <b>{{ participant.score }}</b></div>
+  </div>
+
+  <div class="hr"></div>
+
+  <h2 style="margin-top:0;">Ваш результат</h2>
+  <p>
+    Игрок: <b>{{ participant.name }}</b><br>
+    Место: <b>{{ rank }}</b> из <b>{{ total }}</b>
+  </p>
+
+  <div class="hr"></div>
+
+  <h2 style="margin-top:0;">Топ-10</h2>
+  {% if top %}
+    <table>
+      <thead>
+        <tr>
+          <th style="width:60px;">#</th>
+          <th>Игрок</th>
+          <th style="width:110px;">Баллы</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in top %}
+        <tr {% if p.id == participant.id %}style="background:#f0f9ff;"{% endif %}>
+          <td>{{ forloop.counter }}</td>
+          <td><b>{{ p.name }}</b></td>
+          <td><b>{{ p.score }}</b></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">Нет данных.</p>
+  {% endif %}
+
+  <p class="muted" style="margin-top:12px;">
+    Можно закрыть страницу.
+  </p>
+</div>
+{% endblock %}

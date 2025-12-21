@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Игра — {{ session.quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:720px; margin:0 auto;">
+  <div class="row" style="justify-content:space-between;">
+    <div>
+      <h1 style="margin:0;">{{ session.quiz.title }}</h1>
+      <p class="muted" style="margin:6px 0 0 0;">
+        Комната: <b>{{ session.code }}</b> • Игрок: <b>{{ participant.name }}</b>
+      </p>
+    </div>
+    <div class="pill">Баллы: <b id="score">{{ participant.score }}</b></div>
+  </div>
+
+  <div class="hr"></div>
+
+  <!-- Экран ожидания старта -->
+  <div id="screen-wait-start">
+    <h2>Ожидание…</h2>
+    <p class="muted">Ведущий ещё не начал викторину. Не закрывай страницу.</p>
+  </div>
+
+  <!-- Экран вопроса -->
+  <div id="screen-question" style="display:none;">
+    <div class="pill" id="q-meta" style="margin-bottom:12px;">Вопрос</div>
+    <h2 id="q-text" style="margin-top:0;"></h2>
+
+    <div id="options" class="grid" style="gap:10px;"></div>
+
+    <p id="answer-info" class="muted" style="margin-top:12px;"></p>
+  </div>
+
+  <!-- Экран ожидания следующего вопроса -->
+  <div id="screen-wait-next" style="display:none;">
+    <h2>Ответ принят ✅</h2>
+    <p class="muted">Жди следующий вопрос…</p>
+  </div>
+
+  <!-- Экран завершения (на секунду, потом редирект на итог) -->
+  <div id="screen-finished" style="display:none;">
+    <h2>Викторина завершена</h2>
+    <p class="muted">Переходим к итогам…</p>
+  </div>
+</div>
+
+<!-- на всякий случай, чтобы csrftoken точно появился -->
+<form style="display:none;">{% csrf_token %}</form>
+
+<script>
+  const elWaitStart = document.getElementById("screen-wait-start");
+  const elQuestion  = document.getElementById("screen-question");
+  const elWaitNext  = document.getElementById("screen-wait-next");
+  const elFinished  = document.getElementById("screen-finished");
+
+  const elScore = document.getElementById("score");
+  const elQText = document.getElementById("q-text");
+  const elQMeta = document.getElementById("q-meta");
+  const elOptions = document.getElementById("options");
+  const elAnswerInfo = document.getElementById("answer-info");
+
+  let lastQuestionId = null;
+  let answeredForQuestionId = null; // чтобы показывать "ожидание следующего"
+
+  function show(screen) {
+    elWaitStart.style.display = (screen === "wait-start") ? "" : "none";
+    elQuestion.style.display  = (screen === "question")   ? "" : "none";
+    elWaitNext.style.display  = (screen === "wait-next")  ? "" : "none";
+    elFinished.style.display  = (screen === "finished")   ? "" : "none";
+  }
+
+  function getCookie(name) {
+    const m = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+    return m ? m[2] : "";
+  }
+
+  async function fetchState() {
+    const r = await fetch("{% url 'session_state' code=session.code %}", { cache: "no-store" });
+    if (!r.ok) return null;
+    return await r.json();
+  }
+
+  async function postAnswer(optionId) {
+    const form = new FormData();
+    form.append("option_id", optionId);
+
+    const r = await fetch("{% url 'submit_answer' code=session.code %}", {
+      method: "POST",
+      body: form,
+      headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+
+    // если сервер упал, вернётся HTML — покажем читабельную ошибку
+    const text = await r.text();
+    try { return JSON.parse(text); }
+    catch { return { ok:false, error:"server_error", raw:text }; }
+  }
+
+  function renderQuestion(q, alreadyAnswered) {
+    elQMeta.textContent = "Вопрос";
+    elQText.textContent = q.text;
+
+    elOptions.innerHTML = "";
+    elAnswerInfo.textContent = alreadyAnswered ? "Ответ уже принят. Жди следующий вопрос…" : "";
+
+    q.options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.className = "btn secondary";
+      btn.type = "button";
+      btn.style.textAlign = "left";
+      btn.style.width = "100%";
+      btn.textContent = opt.text;
+      btn.disabled = alreadyAnswered;
+
+      btn.onclick = async () => {
+        // блокируем все кнопки сразу
+        [...elOptions.querySelectorAll("button")].forEach(b => b.disabled = true);
+
+        const res = await postAnswer(opt.id);
+
+        if (!res.ok) {
+          elAnswerInfo.textContent = "Ошибка отправки ответа. Открой консоль или обнови страницу.";
+          console.error(res);
+          return;
+        }
+
+        answeredForQuestionId = q.id;
+
+        if (res.already_answered) {
+          elAnswerInfo.textContent = "Ответ уже принят. Жди следующий вопрос…";
+          show("wait-next");
+          return;
+        }
+
+        elScore.textContent = res.score ?? elScore.textContent;
+        elAnswerInfo.textContent = res.is_correct ? "Верно ✅ Жди следующий вопрос…" : "Неверно ❌ Жди следующий вопрос…";
+        show("wait-next");
+      };
+
+      elOptions.appendChild(btn);
+    });
+  }
+
+  function render(state) {
+    elScore.textContent = state.participant.score;
+
+    if (state.status === "finished") {
+      show("finished");
+      // редирект на итоговую страницу
+      setTimeout(() => window.location.href = "{% url 'final_session' code=session.code %}", 600);
+      return;
+    }
+
+    if (state.status === "waiting") {
+      show("wait-start");
+      return;
+    }
+
+    // running:
+    if (!state.current_question) {
+      show("wait-start");
+      return;
+    }
+
+    const q = state.current_question;
+
+    // если вопрос сменился — сбросим ожидание "следующего"
+    if (lastQuestionId !== q.id) {
+      lastQuestionId = q.id;
+      answeredForQuestionId = null;
+    }
+
+    // если мы уже ответили на этот вопрос — ждём следующий
+    if (answeredForQuestionId === q.id || state.already_answered) {
+      show("wait-next");
+      return;
+    }
+
+    show("question");
+    renderQuestion(q, state.already_answered);
+  }
+
+  async function tick() {
+    const state = await fetchState();
+    if (state && !state.error) render(state);
+    setTimeout(tick, 1200); // polling
+  }
+
+  show("wait-start");
+  tick();
+</script>
+{% endblock %}

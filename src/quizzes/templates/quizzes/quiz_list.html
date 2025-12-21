@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Мои викторины{% endblock %}
+
+{% block content %}
+<div class="grid grid-2">
+  <div class="card">
+    <div class="row" style="justify-content:space-between;">
+      <h1 style="margin:0;">Мои викторины</h1>
+      <a class="btn" href="{% url 'quiz_create' %}">+ Создать</a>
+    </div>
+
+    <div class="hr"></div>
+
+    {% if quizzes %}
+      <table>
+        <thead>
+          <tr>
+            <th>Название</th>
+            <th style="width:220px;">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for q in quizzes %}
+          <tr>
+            <td>
+              <b>{{ q.title }}</b><br>
+              <span class="muted">Вопросов: {{ q.questions.count }}</span>
+            </td>
+            <td>
+              <div class="row">
+                <a class="btn secondary" href="{% url 'quiz_edit' quiz_id=q.id %}">Редактировать</a>
+                <a class="btn" href="/sessions/create/{{ q.id }}/">Запустить</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">Пока нет викторин. Нажми “Создать”.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">Как работать</h2>
+    <ol>
+      <li>Создай викторину</li>
+      <li>Добавь вопросы и варианты</li>
+      <li>Нажми “Запустить” → получишь QR</li>
+      <li>Участники заходят и отвечают</li>
+    </ol>
+    <p class="muted">Кнопка “Запустить” ведёт на уже сделанную часть sessions.</p>
+  </div>
+</div>
+{% endblock %}

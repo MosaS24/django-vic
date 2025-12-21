@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Сессии — {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="row" style="justify-content:space-between;">
+    <div>
+      <h1 style="margin:0;">Сессии викторины</h1>
+      <p class="muted" style="margin:6px 0 0 0;"><b>{{ quiz.title }}</b></p>
+    </div>
+
+    <div class="row">
+      <a class="btn secondary" href="{% url 'quiz_edit' quiz_id=quiz.id %}">← Назад</a>
+      <a class="btn" href="{% url 'create_session' quiz_id=quiz.id %}">+ Запустить новую комнату</a>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+
+  {% if sessions %}
+    <table>
+      <thead>
+        <tr>
+          <th>Код</th>
+          <th>Статус</th>
+          <th>Создана</th>
+          <th style="width:260px;">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sessions %}
+          <tr>
+            <td><b>{{ s.code }}</b></td>
+            <td>{{ s.status }}</td>
+            <td class="muted">{{ s.created_at|date:"d.m.Y H:i" }}</td>
+            <td>
+              <div class="row">
+                <a class="btn secondary" href="{% url 'host_session' code=s.code %}">Панель</a>
+                <a class="btn secondary" href="{% url 'host_results' code=s.code %}">Результаты</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">Пока нет сессий. Нажми “Запустить новую комнату”.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Вопрос{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1 style="margin-top:0;">
+    {% if is_new %}Новый вопрос{% else %}Редактирование вопроса{% endif %}
+  </h1>
+
+  <p class="muted">Викторина: <b>{{ quiz.title }}</b></p>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <h2>Вопрос</h2>
+    {{ q_form.as_p }}
+
+    <div class="hr"></div>
+
+    <h2>Варианты ответов</h2>
+
+    {{ formset.management_form }}
+
+    <div id="options">
+      {% for f in formset.forms %}
+        <div class="card" style="margin:10px 0; padding:12px;">
+          {{ f.id }}
+          <div class="row">
+            <div style="flex:1;">{{ f.text }}</div>
+            <div style="min-width:160px;">{{ f.is_correct }} <span class="muted">правильный</span></div>
+            <div style="min-width:120px;">{{ f.DELETE }} <span class="muted">удалить</span></div>
+          </div>
+          {% if f.non_field_errors %}<div class="muted">{{ f.non_field_errors }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <button class="btn secondary" type="button" id="add-option">+ Добавить вариант</button>
+
+    <div class="hr"></div>
+
+    <div class="row">
+      <button class="btn" type="submit">Сохранить</button>
+      <a class="btn secondary" href="{% url 'quiz_edit' quiz_id=quiz.id %}">← К викторине</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  // JS для добавления формы варианта ответа (Django formset)
+  const addBtn = document.getElementById("add-option");
+  const container = document.getElementById("options");
+
+  addBtn.addEventListener("click", () => {
+    const total = document.getElementById("id_option_set-TOTAL_FORMS");
+    const idx = parseInt(total.value, 10);
+
+    // Берём пустую форму-шаблон из data (генерим руками минимально)
+    const block = document.createElement("div");
+    block.className = "card";
+    block.style.margin = "10px 0";
+    block.style.padding = "12px";
+
+    block.innerHTML = `
+      <div class="row">
+        <div style="flex:1;">
+          <input type="text" name="option_set-${idx}-text" maxlength="300" placeholder="Вариант ответа..." />
+        </div>
+        <div style="min-width:160px;">
+          <input type="checkbox" name="option_set-${idx}-is_correct" /> <span class="muted">правильный</span>
+        </div>
+        <div style="min-width:120px;">
+          <input type="checkbox" name="option_set-${idx}-DELETE" /> <span class="muted">удалить</span>
+        </div>
+      </div>
+      <input type="hidden" name="option_set-${idx}-id" id="id_option_set-${idx}-id" />
+    `;
+
+    container.appendChild(block);
+    total.value = idx + 1;
+  });
+</script>
+{% endblock %}

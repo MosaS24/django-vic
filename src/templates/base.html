@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}QuizSite{% endblock %}</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background:#f6f7fb; color:#111827; }
+    header { background:#111827; color:#fff; padding: 14px 18px; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 18px; }
+    a { color:#2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .nav { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .nav a { color:#fff; text-decoration:none; }
+    .nav .right { display:flex; gap:12px; align-items:center; }
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius: 16px; padding: 18px; box-shadow: 0 1px 8px rgba(0,0,0,.05); }
+    .grid { display:grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width: 860px) { .grid-2 { grid-template-columns: 1.2fr .8fr; } }
+    .btn { display:inline-block; padding: 10px 14px; border-radius: 12px; border:1px solid #e5e7eb; background:#111827; color:#fff; cursor:pointer; }
+    .btn:hover { filter: brightness(1.05); }
+    .btn.secondary { background:#fff; color:#111827; }
+    .btn.danger { background:#b91c1c; }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
+    .muted { color:#6b7280; }
+    table { width:100%; border-collapse: collapse; overflow:hidden; border-radius: 14px; }
+    th, td { padding: 10px 10px; border-bottom: 1px solid #e5e7eb; text-align:left; }
+    th { background:#f9fafb; }
+    input[type="text"], textarea { width: 100%; padding:10px; border-radius:12px; border:1px solid #e5e7eb; box-sizing:border-box; }
+    label { font-weight: 600; }
+    .form p { margin: 10px 0; }
+    .pill { display:inline-block; padding: 6px 10px; border-radius: 999px; background:#f3f4f6; }
+    .hr { height:1px; background:#e5e7eb; margin: 14px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <div><a href="{% url 'quiz_list' %}"><b>QuizSite</b></a></div>
+      <div class="right">
+        {% if user.is_authenticated %}
+          <span class="pill">👤 {{ user.username }}</span>
+          <a class="btn secondary" href="{% url 'logout' %}">Выйти</a>
+        {% else %}
+          <a class="btn secondary" href="{% url 'login' %}">Войти</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

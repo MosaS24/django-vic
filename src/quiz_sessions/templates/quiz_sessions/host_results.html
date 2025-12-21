@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Результаты — {{ session.quiz.title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+    .topbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .pill { display:inline-block; padding: 6px 10px; border-radius: 999px; background:#f3f4f6; }
+    a.button { display:inline-block; padding: 8px 12px; border-radius: 10px; border: 1px solid #e5e7eb; text-decoration:none; color:#111827; }
+    a.button:hover { background:#f9fafb; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; overflow: hidden; border-radius: 12px; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+    th { background: #f9fafb; font-weight: 600; color:#111827; }
+    tr:hover td { background: #fcfcfd; }
+    .rank { width: 64px; }
+    .score { width: 110px; font-weight: 700; }
+    .muted { color:#6b7280; font-size: 14px; }
+    .empty { margin-top: 16px; padding: 16px; border: 1px dashed #e5e7eb; border-radius: 12px; color:#6b7280; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <h1 style="margin:0;">Результаты: {{ session.quiz.title }}</h1>
+    <span class="pill">Комната: <b>{{ session.code }}</b></span>
+    <span class="pill">Статус: <b id="status">{{ session.status }}</b></span>
+    <span class="pill">Участников: <b id="count">{{ participants|length }}</b></span>
+
+    <a class="button" href="{% url 'host_session' code=session.code %}">← Назад к панели</a>
+    <a class="button" href="" onclick="location.reload(); return false;">Обновить</a>
+  </div>
+
+  <p class="muted">Таблица обновляется автоматически раз в 2 секунды.</p>
+
+  {% if participants %}
+    <table>
+      <thead>
+        <tr>
+          <th class="rank">#</th>
+          <th>Участник</th>
+          <th class="score">Баллы</th>
+          <th>Время входа</th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        {% for p in participants %}
+          <tr>
+            <td class="rank">{{ forloop.counter }}</td>
+            <td>{{ p.name }}</td>
+            <td class="score">{{ p.score }}</td>
+            <td class="muted">{{ p.joined_at|date:"d.m.Y H:i:s" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty">Пока нет участников. Они появятся здесь после входа по QR/ссылке.</div>
+  {% endif %}
+
+  <script>
+    // Лёгкий auto-refresh без WebSocket:
+    // просто перезагружаем страницу, но аккуратно (если пользователь не выделяет текст)
+    let lastActive = Date.now();
+
+    document.addEventListener("mousemove", () => lastActive = Date.now());
+    document.addEventListener("keydown", () => lastActive = Date.now());
+
+    setInterval(() => {
+      // если юзер активно взаимодействует — не мешаем
+      if (Date.now() - lastActive < 1500) return;
+      location.reload();
+    }, 2000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Редактирование{% endblock %}
+
+{% block content %}
+<div class="grid grid-2">
+  <div class="card">
+    <h1 style="margin-top:0;">{{ quiz.title }}</h1>
+
+    <form method="post" class="form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <div class="row">
+        <button class="btn" type="submit">Сохранить</button>
+        <a class="btn secondary" href="{% url 'quiz_list' %}">← Назад</a>
+        <a class="btn" href="/sessions/create/{{ quiz.id }}/">Запустить</a>
+        <a class="btn secondary" href="{% url 'quiz_sessions_list' quiz_id=quiz.id %}">Комнаты</a>
+      </div>
+    </form>
+
+    <div class="hr"></div>
+
+    <div class="row" style="justify-content:space-between;">
+      <h2 style="margin:0;">Вопросы</h2>
+      <a class="btn" href="{% url 'question_create' quiz_id=quiz.id %}">+ Вопрос</a>
+    </div>
+
+    {% if questions %}
+      <table style="margin-top:12px;">
+        <thead>
+          <tr>
+            <th style="width:80px;">№</th>
+            <th>Текст</th>
+            <th style="width:200px;">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for q in questions %}
+          <tr>
+            <td>{{ q.order }}</td>
+            <td>{{ q.text|truncatechars:90 }}</td>
+            <td>
+              <div class="row">
+                <a class="btn secondary" href="{% url 'question_edit' quiz_id=quiz.id question_id=q.id %}">Открыть</a>
+                <a class="btn danger" href="{% url 'question_delete' quiz_id=quiz.id question_id=q.id %}">Удалить</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">Пока нет вопросов. Добавь хотя бы один.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">Проверка</h2>
+    <p class="muted">Рекомендуется:</p>
+    <ul>
+      <li>У каждого вопроса ≥ 2 вариантов</li>
+      <li>Ровно один правильный вариант (или несколько — если решишь расширить)</li>
+      <li>Нумерация order без пропусков (не обязательно, но красиво)</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}
